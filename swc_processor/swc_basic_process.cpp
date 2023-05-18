@@ -3,23 +3,15 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
-#include <filesystem>
+//#include <filesystem>
 #include <unordered_map>
 
 #include "../config.h"
+#include "../file_processor/file_processor.h"
 
-bool checkNodestree(const std::string& swc_file, std::vector<Node>& tree){
-    //check if file exist
-    if exists:
-        return false;
+#include "swc_basic_process.h"
 
-    tree = parseSwcfile(&swc_file);
-    if (tree.size==0){
-        return false;
-        }
 
-    return true;
-}
 
 std::vector<Node> parseSwcfile(const std::string& swc_file) {
     std::vector<Node> tree;
@@ -37,7 +29,24 @@ std::vector<Node> parseSwcfile(const std::string& swc_file) {
     return tree;
 }
 
-void writeNodestree(const std::vector<Node>& tree, const std::string& swc_file, const std::vector<std::string>& header = {}) {
+bool checkNodestree(const std::string& swc_file, std::vector<Node>& tree){
+    // Check if file exists
+    if (!fileExists(swc_file)){
+        std::cout << "File does not exist: " << swc_file << std::endl;
+        return false;
+    }
+
+    // Parse SWC file
+    tree = parseSwcfile(swc_file);
+    if (tree.size() == 0){
+        std::cout << "Failed to parse SWC file: " << swc_file << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+void writeNodestree(const std::vector<Node>& tree, const std::string& swc_file, const std::vector<std::string>& header) {
     std::ofstream fp(swc_file);
     for (const auto& s : header) {
         fp << s << "\n";
@@ -62,13 +71,13 @@ std::vector<Marker> parseMarkerfile(const std::string& marker_file) {
         // Split the string into individual components
         std::vector<std::string> components;
         size_t startPos = 0;
-        size_t endPos = a.find(",");
+        size_t endPos = line.find(",");
         while (endPos != std::string::npos) {
             components.push_back(line.substr(startPos, endPos - startPos));
             startPos = endPos + 1;
-            endPos = a.find(",", startPos);
+            endPos = line.find(",", startPos);
         }
-        components.push_back(a.substr(startPos, a.length() - startPos));
+        components.push_back(line.substr(startPos, line.length() - startPos));
 
         // Assign the components to the marker's variables
         size_t componentCount = components.size();
@@ -103,17 +112,18 @@ std::vector<Marker> parseMarkerfile(const std::string& marker_file) {
     return tree;
 }
 
-void writeMarkerstree(const Marker& marker, const std::string& markerfile, const std::vector<std::string>& header = {}) {
+bool writeMarkerstree(const Marker& marker, const std::string& markerfile, const std::vector<std::string>& header) {
     std::ofstream fp(markerfile);
     for (const auto& s : header) {
         fp << s << "\n";
     }
     fp << "##x,y,z,radius,shape,name,comment,color_r,color_g,color_b\n";
     
-    fp << marker.x << "," << marker.y << "," << marker.z << "," << marker.r << "," << marker.shape << "," << marker.name << "," << marker.comment << "," << marker.red << "," << marker.green << "," << marker.blue<< endl;
+    fp << marker.x << "," << marker.y << "," << marker.z << "," << marker.r << "," << marker.shape << "," << marker.name << "," << marker.comment << "," << marker.red << "," << marker.green << "," << marker.blue<< std::endl;
+    return true;
 }
 
-void writeMarkerstree(const std::vector<Marker>& markertree, const std::string& markerfile, const std::vector<std::string>& header = {}) {
+bool writeMarkerstree(const std::vector<Marker>& markerstree, const std::string& markerfile, const std::vector<std::string>& header) {
     std::ofstream fp(markerfile);
     for (const auto& s : header) {
         fp << s << "\n";
@@ -121,11 +131,12 @@ void writeMarkerstree(const std::vector<Marker>& markertree, const std::string& 
     fp << "##x,y,z,radius,shape,name,comment,color_r,color_g,color_b\n";
     
     for (const Marker& marker : markerstree) {
-         fp << marker.x << "," << marker.y << "," << marker.z << "," << marker.r << "," << marker.shape << "," << marker.name << "," << marker.comment << "," << marker.red << "," << marker.green << "," << marker.blue<< endl;
+         fp << marker.x << "," << marker.y << "," << marker.z << "," << marker.r << "," << marker.shape << "," << marker.name << "," << marker.comment << "," << marker.red << "," << marker.green << "," << marker.blue<< std::endl;
     }
+    return true;
 }
 
-Node find_first_soma(const std::vector<Node>& tree, int p_soma = -1) {
+Node find_first_soma(const std::vector<Node>& tree, int p_soma) {
     for (const auto& leaf : tree) {
         if (leaf.parent == p_soma) {
             return leaf;
@@ -182,22 +193,22 @@ std::unordered_map<int, Node> get_pos_dict(const std::vector<Node>& tree) {
 }
 
 std::unordered_map<int, std::vector<int>> get_child_dict(const std::vector<Node>& tree){
-    std::unordered_map<int, Node> child_dict;
+    std::unordered_map<int, std::vector<int>> child_dict;
     for (const auto& leaf : tree) {
         child_dict[leaf.parent].push_back(leaf.idx);
     }
 }
 
-std::vector<std::vector<double>> get_furcation(const std::vector<Node>& tree, std::string& furfile) {
+std::vector<Marker> get_furcation(const std::vector<Node>& tree, std::string& furfile) {
     std::vector<Marker> furcation;
     std::unordered_map<int, Node> pos_dict = get_pos_dict(tree);
-    std::unordered_map<int, std::vector<int>> child_dict = get_child_dict(tree)
+    std::unordered_map<int, std::vector<int>> child_dict = get_child_dict(tree);
     for (const auto& entry : child_dict) {
         int parent = entry.first;
         const std::vector<int>& children = entry.second;
         if (children.size() > 1) {
-            const Marker& marker;
-            const Node& node = pos_dict[parent];
+            Marker marker;
+            Node node = pos_dict[parent];
             marker.x = node.x;
             marker.y = node.y;
             marker.z = node.z;
@@ -205,8 +216,8 @@ std::vector<std::vector<double>> get_furcation(const std::vector<Node>& tree, st
             furcation.push_back(marker);
         }
     }
-    write = writeMarkerstree(&furcation, &furfile);
-    cout << "furcation file written" << endl;
+    bool write = writeMarkerstree(furcation, furfile);
+    std::cout << "furcation file written" << std::endl;
     return furcation;
 }
     

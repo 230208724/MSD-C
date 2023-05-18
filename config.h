@@ -5,11 +5,11 @@
 
 // 定义全局变量
 #include <string>
-std::string __PROJECTPATH__ = "/media/lyx/LaCie/MSD-C";
-std::string __V3DSO__ = "/home/lyx/software/v3d_external/bin/vaa3d";
-std::string __APP2SO__ = "/home/lyx/software/v3d_external/bin/plugins/neuron_tracing/Vaa3D_Neuron2/libvn2.so";
-std::string __GSDTSO__ = "/home/lyx/software/v3d_external/bin/plugins/image_filters/Grayscale_Image_Distance_Transform/libgsdt.so";
-double __INTMAX__ = 2147483647;
+static std::string __PROJECTPATH__ = "/media/lyx/LaCie/MSD-C";
+static std::string __V3DSO__ = "/home/lyx/software/v3d_external/bin/vaa3d";
+static std::string __APP2SO__ = "/home/lyx/software/v3d_external/bin/plugins/neuron_tracing/Vaa3D_Neuron2/libvn2.so";
+static std::string __GSDTSO__ = "/home/lyx/software/v3d_external/bin/plugins/image_filters/Grayscale_Image_Distance_Transform/libgsdt.so";
+static double __INTMAX__ = 2147483647;
 
 struct Node {
     int idx;
@@ -27,8 +27,8 @@ struct Marker {
     double z;
     double r = 0.0;
     int shape = 0;
-    std::string name = '';
-    std::string comment = '';
+    std::string name = "";
+    std::string comment = "";
     int red = 255;
     int green = 0;
     int blue = 0;

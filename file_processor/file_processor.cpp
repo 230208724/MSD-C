@@ -5,13 +5,16 @@
 #include <fstream>
 #include <iomanip>
 #include <algorithm>
-#include <experimental/filesystem>
-
-namespace fs = std::experimental::filesystem;
+//#include <experimental/filesystem>
 
 #include "file_processor.h"
 
-std::vector<std::string> splitString(const std::string& input, const std::string& delimiter=' ') {
+bool fileExists(const std::string& filename) {
+    std::ifstream file(filename);
+    return file.good();
+}
+
+std::vector<std::string> splitString(const std::string& input, const std::string& delimiter=" ") {
     std::cout << "split " << input << "into ";
 
     std::vector<std::string> tokens;
@@ -29,7 +32,7 @@ std::vector<std::string> splitString(const std::string& input, const std::string
     //output
     std::string lastToken = input.substr(start);
     tokens.push_back(lastToken);
-    std::cout << lasttToken << " ";
+    std::cout << lastToken << " ";
     std::cout << std::endl;
 
     return tokens;
@@ -51,17 +54,22 @@ std::vector<std::string> getFilesInDirectory(const std::string& directory) {
 }
 
 std::string convertIntToString(int number, int width=-1) {
-    if width == -1:
-        return number.to_string()
-    else:
+    if (width == -1){
+        return std::to_string(number);
+    }   
+    else{
         std::ostringstream oss;
         oss << std::setfill('0') << std::setw(width) << number;
         return oss.str();
+    }
+        
 }
+
+/* unsettled
 
 std::string findBraindir(const std::string& brain, const std::string& modality="U19_Zeng") {
     std::cout << "brain " << brain << "has the directory ";
-    std::string brain_dir = '';
+    std::string brain_dir = "";
 
     if (modality == "U19_Zeng") {
         std::vector<std::string> brain_dirs = {};
@@ -160,27 +168,33 @@ std::string findBraindir(const std::string& brain, const std::string& modality="
     return brain_dir;
 }
 
+*/
+
 std::vector<std::string> findResdir(const std::string& brain_dir) {
     std::cout << "brain dir " << brain_dir << "has subdir list ";
 
     std::vector<std::string> resdir_list;
 
-    for (const auto& entry : fs::directory_iterator(brain_dir)) {
-        std::string filename = entry.path().filename().string();
-        std::cout << filename << " ";
+    std::ifstream dirStream(brain_dir.c_str());
+    if (dirStream) {
+        std::string filename;
+        while (dirStream >> filename) {
+            std::cout << filename << " ";
 
-        if (filename.substr(0, 3) == "RES") {
-            resdir_list.push_back(entry.path().string());
+            if (filename.substr(0, 3) == "RES") {
+                resdir_list.push_back(filename);
+            }
         }
+        dirStream.close();
     }
-    std::cout<<std::endl;
+
+    std::cout << std::endl;
 
     std::sort(resdir_list.begin(), resdir_list.end(), [&](const std::string& a, const std::string& b) {
         int xsize_a = std::stoi(a.substr(a.find('x') + 1));
         int xsize_b = std::stoi(b.substr(b.find('x') + 1));
         return xsize_a < xsize_b;
     });
-
     std::cout<<"has final res list ";
     for (std::string res: resdir_list){
         std::cout << res << " ";
@@ -191,7 +205,7 @@ std::vector<std::string> findResdir(const std::string& brain_dir) {
 }
 
 
-
+/*
 int main(int argc, char* argv[]) {
     if (argc < 3) {
         std::cout << "用法：" << argv[0] << " -i <输入字符串>" << std::endl;
@@ -206,13 +220,10 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    const std::string delimeter = '_';
-    std::vector<std::string> splits = splitString(input,delimeter) 
-
-    // 打印数值
-    for (std::string var : splits) {
-        std::cout << var << std::endl;
-    }
+    const std::string delimeter = "_";
+    std::vector<std::string> splits = splitString(input,delimeter);
 
     return 0;
 }
+
+*/

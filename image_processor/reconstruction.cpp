@@ -16,17 +16,17 @@
 #include <fstream>
 
 #include "../config.h"
+
 #include "reconstruction.h"
 
 bool App2OnImagefile(const std::string& imgfile, 
                    const std::string& swcfile, 
                    const std::string& markerfile,
-                   const std::string& vaa3dpath = __V3DSO__,
-                   const std::string& app2path = __APP2SO__
-                   ) {
+                   const std::string vaa3dpath,
+                   const std::string app2path) {
     // 执行系统命令
-    int result = std::system(vaa3dpath+" -x "+app2path+" -f app2 -i "+imgfile+" -o "+swcfile+
-                             " -p "+markerfile+" 0 AUTO 0 0 0 1 5 0 0 0");
+    std::string run = vaa3dpath+" -x "+app2path+" -f app2 -i "+imgfile+" -o "+swcfile+" -p "+markerfile+" 0 AUTO 0 0 0 1 5 0 0 0";
+    int result = std::system(run.c_str());
     //std::exec函数用于执行系统命令ls -l。
     //与std::system函数不同的是，std::exec函数只在命令执行失败时返回，否则它会直接替换当前进程，
     //因此如果程序执行到std::exec函数调用后的代码，说明命令执行失败。
@@ -39,9 +39,10 @@ bool App2OnImagefile(const std::string& imgfile,
     }
 }
 
-bool GsdtOnImagefile(const std::string& imgfile, const std::string& newfile,
-                   const std::string& vaa3dpath = __V3DSO__,
-                   const std::string& gsdtpath = __GSDTSO__) {
+bool GsdtOnImagefile(const std::string& imgfile, 
+                   const std::string& newfile,
+                   const std::string& vaa3dpath,
+                   const std::string& gsdtpath) {
     int bg = 0;
     int cnn = 1;
     int chan = 0;
