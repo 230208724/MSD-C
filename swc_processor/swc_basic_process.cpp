@@ -11,10 +11,7 @@
 
 #include "swc_basic_process.h"
 
-
-
-std::vector<Node> parseSwcfile(const std::string& swc_file) {
-    std::vector<Node> tree;
+void parseSwcfile(const std::string& swc_file, std::vector<Node>& tree) {
     std::ifstream fp(swc_file);
     std::string line;
     while (std::getline(fp, line)) {
@@ -26,7 +23,6 @@ std::vector<Node> parseSwcfile(const std::string& swc_file) {
         ss >> node.idx >> node.type >> node.x >> node.y >> node.z >> node.r >> node.parent;
         tree.push_back(node);
     }
-    return tree;
 }
 
 bool checkNodestree(const std::string& swc_file, std::vector<Node>& tree){
@@ -37,12 +33,13 @@ bool checkNodestree(const std::string& swc_file, std::vector<Node>& tree){
     }
 
     // Parse SWC file
-    tree = parseSwcfile(swc_file);
+    parseSwcfile(swc_file, tree);
     if (tree.size() == 0){
         std::cout << "Failed to parse SWC file: " << swc_file << std::endl;
         return false;
     }
 
+    std::cout << swc_file << " Nodes size is: " << tree.size() << std::endl;
     return true;
 }
 
@@ -112,7 +109,7 @@ std::vector<Marker> parseMarkerfile(const std::string& marker_file) {
     return tree;
 }
 
-bool writeMarkerstree(const Marker& marker, const std::string& markerfile, const std::vector<std::string>& header) {
+bool writeMarker(const Marker& marker, const std::string& markerfile, const std::vector<std::string>& header) {
     std::ofstream fp(markerfile);
     for (const auto& s : header) {
         fp << s << "\n";
@@ -197,6 +194,7 @@ std::unordered_map<int, std::vector<int>> get_child_dict(const std::vector<Node>
     for (const auto& leaf : tree) {
         child_dict[leaf.parent].push_back(leaf.idx);
     }
+    return child_dict;
 }
 
 std::vector<Marker> get_furcation(const std::vector<Node>& tree, std::string& furfile) {
@@ -216,8 +214,9 @@ std::vector<Marker> get_furcation(const std::vector<Node>& tree, std::string& fu
             furcation.push_back(marker);
         }
     }
+    std::cout << "furcation number is: " << furcation.size() << std::endl;
     bool write = writeMarkerstree(furcation, furfile);
-    std::cout << "furcation file written" << std::endl;
+    if (write){std::cout << "done written furcation file." << std::endl;}
     return furcation;
 }
     

@@ -11,11 +11,11 @@
 
 #include "../config.h"
 
-std::vector<Node> parseSwcfile(const std::string& swc_file);
+void parseSwcfile(const std::string& swc_file, std::vector<Node>& tree);
 bool checkNodestree(const std::string& swc_file, std::vector<Node>& tree);
 void writeNodestree(const std::vector<Node>& tree, const std::string& swc_file, const std::vector<std::string>& header = {});
 std::vector<Marker> parseMarkerfile(const std::string& marker_file);
-bool writeMarkerstree(const Marker& marker, const std::string& markerfile, const std::vector<std::string>& header = {});
+bool writeMarker(const Marker& marker, const std::string& markerfile, const std::vector<std::string>& header = {});
 bool writeMarkerstree(const std::vector<Marker>& markertree, const std::string& markerfile, const std::vector<std::string>& header = {});
 Node find_first_soma(const std::vector<Node>& tree, int p_soma = -1);
 bool is_in_box(double x, double y, double z, const std::vector<int>& xyzshape); 

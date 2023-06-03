@@ -1,84 +1,132 @@
 
+/*unsettled part
 
-
-std::string reconstruction(const std::string& imgfile = "", const std::string& outdir = "", bool rf = false,
-                    const std::string& vaa3dpath = "/home/lyx/software/v3d_external/bin/vaa3d",
-                    const std::string& vn2path = "/home/lyx/software/v3d_external/bin/plugins/neuron_tracing/Vaa3D_Neuron2/libvn2.so") {
-    std::vector<std::vector<std::vector<unsigned char>>> image;
+// Function to calculate contract values
+vector<double> calc_contract_values(const string& imgfile, const string& swcfile) {
+    ImageType image;
+    SWCType tree;
 
     if (!imgfile.empty()) {
-        // Load the image
-        image = load_image(imgfile, rf);
-    } else {
-        // Handle the case when imgfile is not provided
-        // Replace this with your desired behavior
-        throw std::runtime_error("Image file is not provided.");
+        // Assuming you have a function to load the image, replace the following line with the appropriate code
+        image = loadImage(imgfile, false);
     }
 
-    if (image[0].size() == 2) {
-        image = { image };
+    if (!swcfile.empty()) {
+        // Assuming you have a function to parse SWC files, replace the following line with the appropriate code
+        tree = parseSWC(swcfile);
     }
 
-    // Find the coordinates of the maximum value in the image
-    int z, y, x;
-    unsigned char maxVal = 0;
-    for (size_t i = 0; i < image.size(); ++i) {
-        for (size_t j = 0; j < image[i].size(); ++j) {
-            for (size_t k = 0; k < image[i][j].size(); ++k) {
-                if (image[i][j][k] > maxVal) {
-                    maxVal = image[i][j][k];
-                    z = i;
-                    y = j;
-                    x = k;
-                }
+    vector<vector<int>> array(tree.begin(), tree.end());
+    vector<vector<int>> xyz;
+    for (const auto& row : array) {
+        xyz.push_back({ row[2], row[3], row[4] });
+    }
+
+    // Remove rows with negative values
+    xyz.erase(remove_if(xyz.begin(), xyz.end(), [](const vector<int>& row) {
+        return any_of(row.begin(), row.end(), [](int val) {
+            return val < 0;
+        });
+    }), xyz.end());
+
+    // Remove rows with values greater than the image shape
+    const vector<int> shape = { image.zsize(), image.xsize(), image.ysize() };
+    xyz.erase(remove_if(xyz.begin(), xyz.end(), [&shape](const vector<int>& row) {
+        return any_of(row.begin(), row.end(), [&shape](int val, int i) {
+            return val > shape[i];
+        });
+    }), xyz.end());
+
+    // Get pixel values at the coordinates
+    vector<double> values;
+    for (const auto& coord : xyz) {
+        values.push_back(image(coord[0], coord[1], coord[2]));
+    }
+
+    return values;
+}
+
+// Function to get image statistics
+map<string, double> get_statistics(const string& imgfile) {
+    ImageType image;
+
+    if (!imgfile.empty()) {
+        // Assuming you have a function to load the image, replace the following line with the appropriate code
+        image = loadImage(imgfile, false);
+    }
+
+    map<string, double> stat_dict;
+
+    // Compute aggregate statistics
+    vector<string> agglist = { "max", "min", "mean", "std", "median" };
+    for (const auto& agg : agglist) {
+        if (agg == "median") {
+            double median = 0.0;
+            vector<double> sorted_values(image.begin(), image.end());
+            sort(sorted_values.begin(), sorted_values.end());
+            if (sorted_values.size() % 2 == 0) {
+                median = (sorted_values[sorted_values.size() / 2 - 1] + sorted_values[sorted_values.size() / 2]) / 2.0;
+            } else {
+                median = sorted_values[sorted_values.size() / 2];
             }
+            stat_dict[agg] = median;
+        } else {
+            double value = 0.0;
+            if (agg == "max") {
+                value = *max_element(image.begin(), image.end());
+            } else if (agg == "min") {
+                value = *min_element(image.begin(), image.end());
+            } else if (agg == "mean") {
+                value = accumulate(image.begin(), image.end(), 0.0) / image.size();
+            } else if (agg == "std") {
+                double mean = accumulate(image.begin(), image.end(), 0.0) / image.size();
+                double sum = 0.0;
+                for (const auto& val : image) {
+                sum += pow(val - mean, 2);
+                }
+                value = sqrt(sum / image.size());
+            }
+            stat_dict[agg] = value;
+            // Compute percentiles
+            vector<string> percentiles = { "99", "95", "90", "80", "70", "60", "50", "20", "10", "5", "1" };
+            for (const auto& percentile : percentiles) {
+                double value = 0.0;
+                if (!image.empty()) {
+                    int rank = ceil((stod(percentile) / 100.0) * (image.size() - 1));
+                    vector<double> sorted_values(image.begin(), image.end());
+                    nth_element(sorted_values.begin(), sorted_values.begin() + rank, sorted_values.end());
+                    value = sorted_values[rank];
+                }
+                stat_dict[percentile] = value;
+            }
+            return stat_dict;
         }
     }
+}
 
-    std::cout << "Coordinates: " << y << ", " << x << ", " << z << std::endl;
+*/
+
+
+
+
+/* unsettled
+bool getMipfileFromImagefile(const std::string& imgfile, int& axis, const std::string& mipfile) {
+    cv::Mat image;
+    image = cv::imread(imgfile, cv::IMREAD_GRAYSCALE);
+    std::cout << "image shape: " << image.size() << std::endl;
+    cv::Mat mip;
+    cv::reduce(image, mip, axis, cv::REDUCE_MAX);
+    std::cout << "MIP shape: " << mip.size() << std::endl;
+    cv::imwrite(mipfile, mip);
+    return true;
+}
+
+bool getMipFromImage(cv::Mat& image, int axis, cv::Mat& mip) {
+    std::cout << "image shape: " << image.size() << std::endl;
+
+    cv::reduce(image, mip, axis, [](const cv::Mat& a, const cv::Mat& b){return cv::max(a, b);});
+    std::cout << "MIP shape: " << mip.size() << std::endl;
     
-    std::string markerfile = outdir + "/" + imgfile.substr(imgfile.find_last_of('/') + 1) + "_y" +
-                             std::to_string(y) + "_x" + std::to_string(x) + "_z" + std::to_string(z) + ".marker";
-    write_marker({{ x, y, z }}, markerfile);
-
-    if (!imgfile.empty()) {
-        std::string newfile = outdir + "/" + imgfile.substr(imgfile.find_last_of('/') + 1) + ".swc";
-        std::string vn2_str = vaa3dpath + " -x " + vn2path + 
-    " -f app2 -i " + imgfile + " -o " + newfile + " -p " + markerfile +
-    " 0 AUTO 0 0 0 1 5 0 0 0";
-    // Execute the Vaa3D command
-    int status = system(vn2_str.c_str());
-    if (status != 0) {
-    // Handle the case when the command execution fails
-    throw std::runtime_error("Failed to execute Vaa3D command.");
-    }
-    return newfile;
-    } else {
-    // Handle the case when imgfile is not provided
-    // Replace this with your desired behavior
-    throw std::runtime_error("Image file is not provided.");
-    }
+    return true;
 }
-
-int main() {
-try {
-std::string imgfile = ""; // Provide the image file path here
-std::string outdir = ""; // Provide the output directory path here
-bool rf = false; // Specify the flip_tif value here
-std::string vaa3dpath = "/home/lyx/software/v3d_external/bin/vaa3d";
-std::string vn2path = "/home/lyx/software/v3d_external/bin/plugins/neuron_tracing/Vaa3D_Neuron2/libvn2.so";
-    std::string swcFile = get_swc(imgfile, outdir, rf, vaa3dpath, vn2path);
-    std::cout << "SWC file generated: " << swcFile << std::endl;
-} catch (const std::exception& ex) {
-    std::cerr << "Error: " << ex.what() << std::endl;
-}
-
-return 0;
-
-
-        std::string imgfile_name = imgfile.substr(imgfile.find_last_of('/') + 1);
-        std::string imgfile_extension = imgfile.substr(imgfile.find_last_of('.') + 1);
-
-        newfile = outdir + "/" + imgfile_name + "_gsdt" + std::to_string(u8) + "." + imgfile_extension;
-
-}
+*/
